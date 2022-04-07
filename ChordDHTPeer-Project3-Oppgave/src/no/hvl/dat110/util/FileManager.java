@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
@@ -57,13 +58,16 @@ public class FileManager {
 		// implement
 		
 		// set a loop where size = numReplicas
-		
 		// replicate by adding the index to filename
-		
 		// hash the replica
-		
 		// store the hash in the replicafiles array.
 
+		// (task 2)
+		//Util.numReplicas = 4
+		for (int i=0;  i<Util.numReplicas; i++) {
+			
+			replicafiles[i] = Hash.hashOf(filename+i); //legger til indeks på filnavn (0,1,2,3), hasher replikaen og lagrer i replica-arrayen
+		}
 	}
 	
     /**
@@ -90,7 +94,17 @@ public class FileManager {
     	
     	// increment counter
     	
-    		
+		createReplicaFiles();
+		NodeInterface successor;
+
+		int primary = new Random().nextInt(Util.numReplicas - 1); // må være random iht task 6 
+		for (BigInteger i : replicafiles) {
+			successor = chordnode.findSuccessor(i);
+			successor.addKey(i);
+			successor.saveFileContent(filename, i, bytesOfFile, counter == primary);
+			counter++;
+		}
+    	    		
 		return counter;
     }
 	
@@ -107,7 +121,7 @@ public class FileManager {
 		// Task: Given a filename, find all the peers that hold a copy of this file
 		
 		// generate the N replicas from the filename by calling createReplicaFiles()
-		
+		createReplicaFiles();
 		// it means, iterate over the replicas of the file
 		
 		// for each replica, do findSuccessor(replica) that returns successor s.
@@ -115,7 +129,14 @@ public class FileManager {
 		// get the metadata (Message) of the replica from the successor, s (i.e. active peer) of the file
 		
 		// save the metadata in the set succinfo.
+
 		
+		
+		for (BigInteger i : replicafiles) {
+			NodeInterface successor = chordnode.findSuccessor(i);
+			succinfo.add(successor.getFilesMetadata(i));
+		}
+
 		this.activeNodesforFile = succinfo;
 		
 		return succinfo;
@@ -136,6 +157,10 @@ public class FileManager {
 		// use the primaryServer boolean variable contained in the Message class to check if it is the primary or not
 		
 		// return the primary
+		for (Message m : activeNodesforFile) {
+			if (m.isPrimaryServer())
+				return Util.getProcessStub(m.getNodeIP(), m.getPort());
+		}
 		
 		return null; 
 	}
